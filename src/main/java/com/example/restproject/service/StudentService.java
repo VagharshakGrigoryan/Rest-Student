@@ -1,14 +1,17 @@
 package com.example.restproject.service;
 
+import com.example.restproject.exception.ResourceNotFoundException;
 import com.example.restproject.model.Student;
 import com.example.restproject.repository.StudentRepository;
 import com.example.restproject.response.RestApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 /**
  * @author Vagharhak Grigoryan
@@ -27,29 +30,19 @@ public class StudentService {
 
     public void add(Student student) {
 
-        if(studentRepository.findStudentByEmail(student.getEmail()).isPresent()){
+        if (studentRepository.findStudentByEmail(student.getEmail()).isPresent()) {
             throw new RestApiException("Email is busy");
         }
         studentRepository.save(student);
     }
 
 
-    public void delete(Long studentID) {
-        studentRepository.deleteById(studentID);
-    }
+    public void deleteStudent(@PathVariable(value = "studentID") Long studentID) throws Exception {
+        Student student = studentRepository.findById(studentID).orElseThrow(() ->
+                new ResourceNotFoundException("Student not found on :: " + studentID));
 
-    public void update(Student student) {
-        Optional<Student> row = studentRepository.findById(student.getId());
-        if (row.isPresent()) {
-            Student item = row.get();
-            if (!student.getName().isEmpty()) {
-                item.setName(student.getName());
-            }
-            if (student.getDob() != null) {
-                item.setDob(student.getDob());
-            }
-            studentRepository.save(item);
-
-        }
+        studentRepository.delete(student);
+        @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") Map<String, Boolean> response = new HashMap<>();
+        response.put("deleted", Boolean.TRUE);
     }
 }
